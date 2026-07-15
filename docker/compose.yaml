@@ -3,8 +3,36 @@ services:
     build:
       dockerfile: Dockerfile.desktop.humble
       args:
-        ZED_SDK_MINOR: "5"
-        ZED_SDK_PATCH: "4"
+        ZED_SDK_MAJOR: "5"
+        ZED_SDK_MINOR: "4"
+        ZED_SDK_PATCH: "0"
+        UBUNTU_MAJOR: "22"
+        UBUNTU_MINOR: "04"
+        CUDA_MAJOR: "13"
+        CUDA_MINOR: "2"
+        CUDA_PATCH: "1"
+    image: zed-ros2-desktop:latest
+    gpus: all
+    privileged: true
+    network_mode: host
+    ipc: host
+    pid: host
+
+    environment:
+      DISPLAY: ${DISPLAY} #:0 by default on most systems (primary display)
+      NVIDIA_DRIVER_CAPABILITIES: "all"
+    
+    volumes:
+      - /tmp/.X11-unix/:/tmp/.X11-unix 
+      - /dev:/dev 
+      - /dev/shm:/dev/shm 
+  jetson-ros2:
+    build:
+      dockerfile: Dockerfile.desktop.humble
+      args:
+        ZED_SDK_MAJOR: "5"
+        ZED_SDK_MINOR: "4"
+        ZED_SDK_PATCH: "0"
         UBUNTU_MAJOR: "22"
         UBUNTU_MINOR: "04"
         CUDA_MAJOR: "13"

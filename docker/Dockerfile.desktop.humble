@@ -109,7 +109,7 @@ ENV ROS_DISTRO ${ROS2_DIST}
 
 # Copy the sources in the Docker image
 WORKDIR /root/ros2_ws/src
-COPY tmp_sources/ ./
+COPY ./ ./
 
 # RUN ls -lah /root/ros2_ws/src/
 WORKDIR /root/ros2_ws/

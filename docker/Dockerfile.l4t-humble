@@ -75,7 +75,7 @@ ENV ROS_DISTRO=${ROS2_DIST}
 
 # Copy the sources in the Docker image
 WORKDIR /root/ros2_ws/src
-COPY tmp_sources/ ./
+COPY ./ ./
 
 # Install missing dependencies from the sources
 WORKDIR /root/ros2_ws/src

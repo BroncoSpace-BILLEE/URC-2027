@@ -7,7 +7,7 @@ version = "0.1.0"
  
 [tasks]
 build = "colcon build --parallel-workers $(nproc) --symlink-install --event-handlers console_direct+ --base-paths src --cmake-args ' -DCMAKE_BUILD_TYPE=Release' ' -DCMAKE_LIBRARY_PATH=/usr/local/cuda/lib64/stubs' ' -DCMAKE_CXX_FLAGS=\"-Wl,--allow-shlib-undefined\"'"
- 
+
 [dependencies]
 ros-humble-desktop = ">=0.10.0,<0.11"
 colcon-common-extensions = "*"
@@ -19,3 +19,6 @@ argcomplete = "*"
 numpy = "*"
 empy = "*"
 lark = "*"
+
+[activation]
+scripts = ["install/setup.sh"]

@@ -90,6 +90,7 @@ WORKDIR /root/ros2_ws
 # CUDA devel image itself, /usr/local/cuda is present for the CMake
 # args that reference it.
 COPY ros2_ws .
+RUN pixi install
 RUN pixi run build
 
 # Setup environment variables

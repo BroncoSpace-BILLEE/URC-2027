@@ -19,3 +19,4 @@ echo "---------------------"
 echo 'To start a ZED camera node:'
 echo '  ros2 launch zed_wrapper zed_camera.launch.py camera_model:=<zed|zedm|zed2|zed2i|zedx|zedxm|zedxonegs|zedxone4k|zedxonehdr|virtual>'
 echo "---------------------"
+exec "$@"

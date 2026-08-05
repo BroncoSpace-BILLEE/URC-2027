@@ -5,6 +5,8 @@
     "context": "../"
   },
 
+  "initializeCommand": "xhost +local:root",
+
   "containerUser": "root",
   "remoteUser": "root",
 
@@ -20,14 +22,17 @@
 	  "--volume", "/dev/shm:/dev/shm"
   ],
 
+  "workspaceMount": "source=${localWorkspaceFolder}/ros2_ws,target=/root/ros2_ws,type=bind",
   "workspaceFolder": "/root/ros2_ws",
+  "postStartCommand": "if ! grep -Fq \"'exec' /root/ros2_ws/.pixi/envs/default/bin/python\" .pixi/envs/default/bin/ros2 2>/dev/null; then pixi clean --environment default || true; pixi install; fi",
 
   "containerEnv": {
     "ROS_DISTRO": "humble",
     "DISPLAY": "${localEnv:DISPLAY}",
 		"WAYLAND_DISPLAY": "${localEnv:WAYLAND_DISPLAY}", 
-		"XDG_RUNTIME_DIR": "${localEnv:XDG_RUNTIME_DIR}"
-  },
+		"XDG_RUNTIME_DIR": "${localEnv:XDG_RUNTIME_DIR}",
+    "LIBGL_ALWAYS_SOFTWARE": "1"
+  }
 
 
 }

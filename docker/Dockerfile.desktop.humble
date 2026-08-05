@@ -6,7 +6,6 @@ ARG CUDA_PATCH=1
 ARG ZED_SDK_MAJOR=5
 ARG ZED_SDK_MINOR=4
 ARG ZED_SDK_PATCH=0
-ARG PIXI_VERSION=0.41.4
 
 
 FROM nvcr.io/nvidia/cuda:${CUDA_MAJOR}.${CUDA_MINOR}.${CUDA_PATCH}-devel-ubuntu${UBUNTU_MAJOR}.${UBUNTU_MINOR}
@@ -19,9 +18,12 @@ ARG CUDA_PATCH=1
 ARG ZED_SDK_MAJOR=5
 ARG ZED_SDK_MINOR=4
 ARG ZED_SDK_PATCH=0
-ARG PIXI_VERSION=0.41.4
+ARG PIXI_VERSION=0.76.1
 # Optional: Override ZED SDK URL
 ARG CUSTOM_ZED_SDK_URL=""
+
+ARG CONDA_OVERRIDE_CUDA=13.2
+ENV CONDA_OVERRIDE_CUDA=${CONDA_OVERRIDE_CUDA}
 
 # create a non-root user
 ARG USERNAME=ros_user
@@ -78,7 +80,6 @@ ENV PIXI_HOME=/opt/pixi
 ENV PATH=${PIXI_HOME}/bin:${PATH}
 
 RUN curl -fsSL https://pixi.sh/install.sh | PIXI_VERSION=v${PIXI_VERSION} PIXI_HOME=${PIXI_HOME} bash
-RUN pixi self-update
 
 #####################################################################
 # Set up the ros2_ws via pixi                                       #
@@ -89,9 +90,12 @@ WORKDIR /root/ros2_ws
 # (see the "build" task in pixi.toml). Because this all happens in the
 # CUDA devel image itself, /usr/local/cuda is present for the CMake
 # args that reference it.
-COPY ros2_ws .
+
+COPY ros2_ws/pixi.toml /root/ros2_ws/pixi.toml
+COPY ros2_ws/pixi.lock /root/ros2_ws/pixi.lock
 RUN pixi install
 RUN pixi run build
+COPY ros2_ws .
 
 # Setup environment variables
 COPY docker/ros_entrypoint.sh /sbin/ros_entrypoint.sh

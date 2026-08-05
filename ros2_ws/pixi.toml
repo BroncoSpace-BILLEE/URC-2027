@@ -2,7 +2,9 @@
 authors = ["Vernonicuhhh <Vernonicuhhh@protonmail.com>"]
 channels = ["https://prefix.dev/robostack-humble", "https://prefix.dev/conda-forge"]
 name = "ros2_ws"
-platforms = ["linux-64"]
+platforms = [
+        {platform="linux-64", cuda="13"},
+]
 version = "0.1.0"
  
 [tasks]
@@ -13,12 +15,10 @@ ros-humble-desktop = ">=0.10.0,<0.11"
 colcon-common-extensions = "*"
 flake8-docstrings = "*"
 pytest-cov = "*"
+ros-humble-turtlesim = ">=1.4.3,<2"
  
 [pypi-dependencies]
 argcomplete = "*"
 numpy = "*"
 empy = "*"
 lark = "*"
-
-[activation]
-scripts = ["install/setup.sh"]

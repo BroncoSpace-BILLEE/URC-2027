@@ -1,0 +1,18 @@
+{
+  "name": "desktop-roshumble-mac-cpu",
+  "build": {
+    "dockerfile": "../../docker/Dockerfile.desktop.mac.humble",
+    "context": "../.."
+  },
+
+  "containerUser": "root",
+  "remoteUser": "root",
+
+  "workspaceMount": "source=${localWorkspaceFolder}/ros2_ws,target=/root/ros2_ws,type=bind",
+  "workspaceFolder": "/root/ros2_ws",
+  "postStartCommand": "if ! grep -Fq \"'exec' /root/ros2_ws/.pixi/envs/mac-cpu/bin/python\" .pixi/envs/mac-cpu/bin/ros2 2>/dev/null; then pixi clean --environment mac-cpu || true; pixi install --environment mac-cpu; fi",
+
+  "containerEnv": {
+    "ROS_DISTRO": "humble"
+  }
+}

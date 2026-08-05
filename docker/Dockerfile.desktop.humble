@@ -36,7 +36,10 @@ ENV NVIDIA_DRIVER_CAPABILITIES \
     ${NVIDIA_DRIVER_CAPABILITIES:+$NVIDIA_DRIVER_CAPABILITIES,}compute,video,utility
 
 # Disable apt-get warnings
-RUN apt-get update || true && apt-get install -y --no-install-recommends apt-utils dialog curl && \
+RUN apt-get update || true && apt-get install -y --no-install-recommends \
+  apt-utils \
+  curl \
+  dialog && \
   rm -rf /var/lib/apt/lists/*
 
 ENV ZED_SDK_URL=${CUSTOM_ZED_SDK_URL:-"https://download.stereolabs.com/zedsdk/${ZED_SDK_MAJOR}.${ZED_SDK_MINOR}.${ZED_SDK_PATCH}/cu${CUDA_MAJOR}/ubuntu${UBUNTU_MAJOR}"}
@@ -54,7 +57,24 @@ ENV TZ=Europe/Paris
 
 RUN ln -snf /usr/share/zoneinfo/$TZ /etc/localtime && echo $TZ > /etc/timezone && \
   apt-get update && \
-  apt-get install --yes lsb-release wget less udev sudo build-essential cmake python3 python3-dev python3-pip python3-wheel git jq libopencv-dev libpq-dev zstd usbutils && \
+  apt-get install --yes \
+  build-essential \
+  cmake \
+  git \
+  jq \
+  less \
+  libopencv-dev \
+  libpq-dev \
+  lsb-release \
+  python3 \
+  python3-dev \
+  python3-pip \
+  python3-wheel \
+  sudo \
+  udev \
+  usbutils \
+  wget \
+  zstd && \
   rm -rf /var/lib/apt/lists/*
 
 # Install the ZED SDK
@@ -62,8 +82,26 @@ RUN echo "CUDA Version $CUDA_VERSION" > /usr/local/cuda/version.txt
 
 # Setup the ZED SDK
 RUN apt-get update -y || true && \
-  apt-get install --no-install-recommends dialog bash-completion lsb-release wget less udev sudo build-essential cmake zstd python3 python3-pip libpng-dev libgomp1 -y && \
-  python3 -m pip install --upgrade pip; python3 -m pip install numpy opencv-python-headless && \
+  apt-get install --no-install-recommends \
+  bash-completion \
+  build-essential \
+  cmake \
+  dialog \
+  less \
+  libgomp1 \
+  libpng-dev \
+  lsb-release \
+  python3 \
+  python3-pip \
+  sudo \
+  tmux \
+  udev \
+  wget \
+  zstd \
+  -y && \
+  python3 -m pip install --upgrade pip; python3 -m pip install \
+  numpy \
+  opencv-python-headless && \
   wget -q -O ZED_SDK_Linux_Ubuntu.run ${ZED_SDK_URL}
 
 #this step will fail if the wget was invalid (e.g. the download link returned a 404 then the head should show html)

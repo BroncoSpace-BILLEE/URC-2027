@@ -15,7 +15,7 @@ for full support:
 
 ### Pixi
 
-This project uses pixi as the package manager, please make sure that the python interpreter is configured to point to `.pixi/bin/python3` in the devcontainer 
+This project uses pixi as the package manager, please make sure that the python interpreter is configured to point to `.pixi/envs/default/bin/python3` in the devcontainer 
 
 For more information about pixi please look at:
 1. [Pixi Cheatsheet](docs/PixiCheatSheet.md)

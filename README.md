@@ -18,7 +18,7 @@ for full support:
 This project uses pixi as the package manager, please make sure that the python interpreter is configured to point to `.pixi/bin/python3` in the devcontainer 
 
 For more information about pixi please look at:
-1. [Pixi Cheatsheet](docs/PixiCheatsheet.md)
+1. [Pixi Cheatsheet](docs/PixiCheatSheet.md)
 2. [Pixi in VSCode](https://pixi.prefix.dev/latest/integration/editor/vscode/#python-extension)
 
 

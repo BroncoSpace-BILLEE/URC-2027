@@ -38,7 +38,12 @@
     "vscode": {
       "extensions": [
         "ms-python.python",
-        "renan-r-santos.pixi-code"
+        "renan-r-santos.pixi-code",
+        "Ranch-Hand-Robotics.urdf-editor",
+        "ms-vscode.cpptools",
+        "ms-vscode.cmake-tools",
+        "smilerobotics.urdf",
+        "waderyan.gitblame"
       ],
       "settings": {
         "python-envs.defaultEnvManager": "ms-python.python:system"

@@ -1,5 +1,27 @@
 # URC-2027
 
+## General Usage
+
+It is generally reccomnded
+
+### System Requirements
+
+for full support:
+
+1. Ubuntu 24+ base OS on device 
+2. CUDA v13 (13.2)
+3. Docker Engine 
+4. VScode with Remote Development Extension group installed
+
+### Pixi
+
+This project uses pixi as the package manager, please make sure that the python interpreter is configured to point to `.pixi/bin/python3` in the devcontainer 
+
+For more information about pixi please look at:
+1. [Pixi Cheatsheet](docs/PixiCheatsheet.md)
+2. [Pixi in VSCode](https://pixi.prefix.dev/latest/integration/editor/vscode/#python-extension)
+
+
 ## Apple-Silicon CPU devcontainer
 
 The default devcontainer is for Linux hosts with an NVIDIA GPU and a ZED camera.

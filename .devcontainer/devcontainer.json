@@ -32,7 +32,18 @@
 		"WAYLAND_DISPLAY": "${localEnv:WAYLAND_DISPLAY}", 
 		"XDG_RUNTIME_DIR": "${localEnv:XDG_RUNTIME_DIR}",
     "LIBGL_ALWAYS_SOFTWARE": "1"
-  }
+  },
 
+  "customizations": {
+    "vscode": {
+      "extensions": [
+        "ms-python.python",
+        "renan-r-santos.pixi-code"
+      ],
+      "settings": {
+        "python-envs.defaultEnvManager": "ms-python.python:system"
+      }
+    }
+  }
 
 }

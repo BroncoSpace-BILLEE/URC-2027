@@ -22,9 +22,7 @@
 	  "--volume", "/dev/shm:/dev/shm"
   ],
 
-  "workspaceMount": "source=${localWorkspaceFolder}/ros2_ws,target=/root/ros2_ws,type=bind",
-  "workspaceFolder": "/root/ros2_ws",
-  "postStartCommand": "if ! grep -Fq \"'exec' /root/ros2_ws/.pixi/envs/default/bin/python\" .pixi/envs/default/bin/ros2 2>/dev/null; then pixi clean --environment default || true; pixi install; fi",
+  "postStartCommand": "cd ros2_ws && pixi install",
 
   "containerEnv": {
     "ROS_DISTRO": "humble",

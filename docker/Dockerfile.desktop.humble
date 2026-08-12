@@ -100,6 +100,15 @@ RUN apt-get update -y || true && \
   opencv-python-headless && \
   wget -q -O ZED_SDK_Linux_Ubuntu.run ${ZED_SDK_URL}
 
+RUN groupadd --gid ${USER_GID} ${USERNAME} && \
+    useradd --uid ${USER_UID} --gid ${USER_GID} -m -s /bin/bash ${USERNAME} && \
+    mkdir -p /home/${USERNAME}/ros2_ws/src && \
+    chown -R ${USERNAME}:${USERNAME} /home/${USERNAME}/ros2_ws && \
+    usermod -aG sudo ${USERNAME} && \
+    echo "${USERNAME} ALL=(ALL) NOPASSWD:ALL" > /etc/sudoers.d/${USERNAME} && \
+    chmod 0440 /etc/sudoers.d/${USERNAME}
+
+
 #this step will fail if the wget was invalid (e.g. the download link returned a 404 then the head should show html)
 RUN chmod +x ZED_SDK_Linux_Ubuntu.run && \
   bash ./ZED_SDK_Linux_Ubuntu.run -- silent skip_tools skip_cuda && \

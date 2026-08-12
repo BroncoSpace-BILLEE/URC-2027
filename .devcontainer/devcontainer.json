@@ -7,8 +7,8 @@
 
   "initializeCommand": "xhost +local:root",
 
-  "containerUser": "root",
-  "remoteUser": "root",
+  "containerUser": "ros_user",
+  "remoteUser": "ros_user",
 
 
   "runArgs": [
@@ -17,6 +17,7 @@
     "--network=host",
     "--pid=host",
     "--ipc=host",
+    "--hostname=ros-dev",
 	  "--volume", "/tmp/.X11-unix:/tmp/.X11-unix",
 	  "--volume", "/dev:/dev",
 	  "--volume", "/dev/shm:/dev/shm"

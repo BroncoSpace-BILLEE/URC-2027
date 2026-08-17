@@ -23,6 +23,10 @@
 	  "--volume", "/dev/shm:/dev/shm"
   ],
 
+  "mounts": [
+    "target=/run/user/1000,type=tmpfs"
+  ],
+
   "postStartCommand": "cd ros2_ws && pixi install",
 
   "containerEnv": {

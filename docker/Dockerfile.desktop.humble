@@ -111,10 +111,12 @@ RUN groupadd --gid ${USER_GID} ${USERNAME} && \
 
 #this step will fail if the wget was invalid (e.g. the download link returned a 404 then the head should show html)
 RUN chmod +x ZED_SDK_Linux_Ubuntu.run && \
-  bash ./ZED_SDK_Linux_Ubuntu.run -- silent skip_tools skip_cuda && \
+  bash ./ZED_SDK_Linux_Ubuntu.run -- silent skip_cuda && \
   ln -sf /lib/x86_64-linux-gnu/libusb-1.0.so.0 /usr/lib/x86_64-linux-gnu/libusb-1.0.so && \
   rm ZED_SDK_Linux_Ubuntu.run && \
-  rm -rf /var/lib/apt/lists/*
+  rm -rf /var/lib/apt/lists/* && \
+  sudo chown -R ${USERNAME}:${USERNAME} /usr/local/zed
+
 
 ENV PIXI_HOME=/opt/pixi
 ENV PATH=${PIXI_HOME}/bin:${PATH}

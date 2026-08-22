@@ -14,6 +14,8 @@
   "runArgs": [
     "--privileged",
     "--gpus", "all",
+    "-e=NVIDIA_VISIBLE_DEVICES=all",
+    "-e=NVIDIA_DRIVER_CAPABILITIES=all,graphics",
     "--network=host",
     "--pid=host",
     "--ipc=host",

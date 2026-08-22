@@ -148,3 +148,10 @@ ros2 param load <node> <param.yaml>
 ```bash
 ros2 action send_goal <action> <action_type> <value>
 ```
+
+## Packages
+
+### Creating a Package
+
+`ros2 pkg create --build-type ament_cmake --license Apache-2.0 <package>`
+`ros2 pkg create --build-type ament_python --license Apache-2.0 <package>`

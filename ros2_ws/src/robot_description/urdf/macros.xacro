@@ -1,0 +1,42 @@
+<?xml version="1.0" ?>
+<robot name="chassis_model" xmlns:xacro="http://www.ros.org/wiki/xacro" >
+
+    <xacro:macro name="white">
+    <visual>
+        <material>
+        <ambient>1 1 1 1</ambient>
+        <diffuse>1 1 1 1</diffuse>
+        <specular>0.1 0.1 0.1 1</specular>
+        </material>
+    </visual>
+    </xacro:macro>
+
+    <xacro:macro name="black">
+        <visual>
+            <material>
+                <ambient>0.02 0.02 0.02 1</ambient>
+                <diffuse>0.02 0.02 0.02 1</diffuse>
+                <specular>0.4 0.4 0.4 1</specular>
+            </material>
+        </visual>
+    </xacro:macro>
+    <xacro:macro name="orange">
+        <visual>
+            <material>
+                <ambient>1 0.2 0 1</ambient>
+                <diffuse>1 0.2 0 1</diffuse>
+                <specular>0.05 0.05 0.05 1</specular>
+            </material>
+        </visual>
+    </xacro:macro>
+
+    <xacro:macro name="dark_grey">
+        <visual>
+            <material>
+            <ambient>0.2 0.2 0.2 1</ambient>
+            <diffuse>0.2 0.2 0.2 1</diffuse>
+            <specular>0.1 0.1 0.1 1</specular>
+            </material>
+        </visual>
+    </xacro:macro>
+</robot>

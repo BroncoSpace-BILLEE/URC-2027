@@ -19,6 +19,14 @@ set_env = [
     SetEnvironmentVariable("IGN_GAZEBO_RESOURCE_PATH", share_root),
     SetEnvironmentVariable("GZ_SIM_MODEL_PATH", share_root),
     SetEnvironmentVariable("GZ_SIM_RESOURCE_PATH", share_root),
+    #SetEnvironmentVariable("QML2_IMPORT_PATH", os.environ.get("QML2_IMPORT_PATH", "")),
+    SetEnvironmentVariable("IGN_GUI_PLUGIN_PATH", "/workspaces/URC-2027/ros2_ws/.pixi/envs/default/lib/ign-gazebo-6/plugins/gui"),
+    SetEnvironmentVariable(
+    "QML2_IMPORT_PATH",
+    "/workspaces/URC-2027/ros2_ws/.pixi/envs/default/lib/ign-gazebo-6/plugins/gui",
+    ),
+    #gui_plugin_path = "/workspaces/URC-2027/ros2_ws/.pixi/envs/default/lib/ign-gazebo-6/plugins/gui"
+
 ]
 
 declare_args = [
@@ -82,7 +90,8 @@ def _launch_description(ctx):
         # gz launch always declares gz_args as a string and PathJoinSubstiution is lazily 
         # evaluated at runtime so  we must eval here to pass as a gz_arg
         launch_arguments={
-            "gz_args": f"-r -v 4 {world_path.perform(ctx)}",
+            #"gz_args": f"-r -v 4 {world_path.perform(ctx)}",
+            "gz_args": f"-r -v 4 empty.sdf",
             "on_exit_shutdown": "true",
         }.items(),
     )

@@ -1,0 +1,72 @@
+<?xml version="1.0" ?>
+<robot xmlns:xacro="http://www.ros.org/wiki/xacro" >
+
+    <xacro:include filename="macros.xacro" />
+
+    <gazebo reference="base_footprint">
+        <xacro:dark_grey/>
+    </gazebo>
+    <gazebo reference="base_link">
+        <xacro:white/>
+    </gazebo>
+    <gazebo reference="suspension_1_left_1">
+        <xacro:dark_grey/>
+    </gazebo>
+    <gazebo reference="suspension_1_right_1">
+        <xacro:dark_grey/>
+    </gazebo>
+    <gazebo reference="suspension_2_left_1">
+        <xacro:dark_grey/>
+    </gazebo>
+    <gazebo reference="suspension_2_right_1">
+        <xacro:dark_grey/>
+    </gazebo>
+    <gazebo reference="wheel_3">
+        <xacro:black/>
+    </gazebo>
+    <gazebo reference="wheel_2">
+        <xacro:black/>
+    </gazebo>
+    <gazebo reference="wheel_1">
+        <xacro:black/>
+    </gazebo>
+    <gazebo reference="wheel_r_1">
+        <xacro:black/>
+    </gazebo>
+    <gazebo reference="wheel_r_2">
+        <xacro:black/>
+    </gazebo>
+    <gazebo reference="wheel_r_3">
+        <xacro:black/>
+    </gazebo>
+
+
+    <gazebo>
+        <plugin name="ignition::gazebo::systems::DiffDrive" filename="libignition-gazebo-diff-drive-system.so">
+
+            <left_joint>joint_wheel_l1</left_joint>
+            <left_joint>joint_wheel_l2</left_joint>
+            <left_joint>joint_wheel_l3</left_joint>
+            
+            <right_joint>joint_wheel_r1</right_joint>
+            <right_joint>joint_wheel_r2</right_joint>
+            <right_joint>joint_wheel_r3</right_joint>
+
+            <wheel_separation>.67</wheel_separation>
+            <wheel_radius>.22</wheel_radius>
+
+            <max_wheel_torque>200</max_wheel_torque>
+            <max_wheel_acceleration>10.0</max_wheel_acceleration>
+
+            <odometry_frame>odom</odometry_frame>
+            <robot_base_frame>base_link</robot_base_frame>
+
+            <publish_odom>true</publish_odom>
+            <publish_odom_tf>true</publish_odom_tf>
+            <publish_wheel_tf>true</publish_wheel_tf>
+
+
+        </plugin>
+    </gazebo>
+
+</robot>

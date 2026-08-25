@@ -9,34 +9,34 @@
     <gazebo reference="base_link">
         <xacro:white/>
     </gazebo>
-    <gazebo reference="suspension_1_left_1">
-        <xacro:dark_grey/>
-    </gazebo>
     <gazebo reference="suspension_1_right_1">
         <xacro:dark_grey/>
     </gazebo>
-    <gazebo reference="suspension_2_left_1">
+    <gazebo reference="suspension_1_left_1">
         <xacro:dark_grey/>
     </gazebo>
     <gazebo reference="suspension_2_right_1">
         <xacro:dark_grey/>
     </gazebo>
-    <gazebo reference="wheel_3">
-        <xacro:black/>
+    <gazebo reference="suspension_2_left_1">
+        <xacro:dark_grey/>
     </gazebo>
-    <gazebo reference="wheel_2">
-        <xacro:black/>
-    </gazebo>
-    <gazebo reference="wheel_1">
-        <xacro:black/>
-    </gazebo>
-    <gazebo reference="wheel_r_1">
+    <gazebo reference="wheel_r_3">
         <xacro:black/>
     </gazebo>
     <gazebo reference="wheel_r_2">
         <xacro:black/>
     </gazebo>
-    <gazebo reference="wheel_r_3">
+    <gazebo reference="wheel_r_1">
+        <xacro:black/>
+    </gazebo>
+    <gazebo reference="wheel_1">
+        <xacro:black/>
+    </gazebo>
+    <gazebo reference="wheel_2">
+        <xacro:black/>
+    </gazebo>
+    <gazebo reference="wheel_3">
         <xacro:black/>
     </gazebo>
 
@@ -55,17 +55,22 @@
             <wheel_separation>.67</wheel_separation>
             <wheel_radius>.22</wheel_radius>
 
-            <max_wheel_torque>200</max_wheel_torque>
-            <max_wheel_acceleration>10.0</max_wheel_acceleration>
 
-            <odometry_frame>odom</odometry_frame>
-            <robot_base_frame>base_link</robot_base_frame>
+            <odom_publish_frequency>50</odom_publish_frequency>
+            <frame_id>odom</frame_id>
+            <child_frame_id>base_footprint</child_frame_id>
 
-            <publish_odom>true</publish_odom>
-            <publish_odom_tf>true</publish_odom_tf>
-            <publish_wheel_tf>true</publish_wheel_tf>
+        </plugin>
+    </gazebo>
 
-
+    <gazebo>
+        <plugin name="ignition::gazebo::systems::JointStatePublisher" filename="libignition-gazebo-joint-state-publisher-system.so">
+            <joint_name>joint_wheel_r1</joint_name>
+            <joint_name>joint_wheel_r2</joint_name>
+            <joint_name>joint_wheel_r3</joint_name>
+            <joint_name>joint_wheel_l1</joint_name>
+            <joint_name>joint_wheel_l2</joint_name>
+            <joint_name>joint_wheel_l3</joint_name>
         </plugin>
     </gazebo>
 

@@ -39,9 +39,41 @@
     <gazebo reference="wheel_3">
         <xacro:black/>
     </gazebo>
+    <gazebo reference="camera_link">
+        <xacro:orange/>
+        <sensor name="camera" type="camera">
+            <pose> 0 0 0 0 0 0</pose>
+            <always_on>true</always_on>
+            <visualize>true</visualize>
+            <update_rate>10</update_rate>
+            <topic>/camera/image_raw</topic>
+            <!-- Match image headers to the URDF frame published by
+                 robot_state_publisher; avoids a Gazebo-specific static TF. -->
+            <gz_frame_id>camera_link_optical</gz_frame_id>
+            <camera>
+                <camera_info_topic>/camera/camera_info</camera_info_topic>
+                <optical_frame_id>camera_link_optical</optical_frame_id>
+                <horizontal_fov>1.089</horizontal_fov>
+                <image>
+                    <format>R8G8B8</format>
+                    <width>640</width>
+                    <height>480</height>
+                </image>
+                <clip>
+                    <near>0.05</near>
+                    <far>8.0</far>
+                </clip>
+            </camera>
+        </sensor>
+    </gazebo>
 
 
     <gazebo>
+        <!-- Render and publish camera / GPU sensor data for this spawned model. -->
+        <plugin name="ignition::gazebo::systems::Sensors" filename="libignition-gazebo-sensors-system.so">
+            <render_engine>ogre2</render_engine>
+        </plugin>
+
         <plugin name="ignition::gazebo::systems::DiffDrive" filename="libignition-gazebo-diff-drive-system.so">
 
             <left_joint>joint_wheel_l1</left_joint>

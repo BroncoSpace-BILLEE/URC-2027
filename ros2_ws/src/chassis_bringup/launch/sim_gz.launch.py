@@ -89,8 +89,6 @@ def _launch_description(ctx):
         value_type=str,
     )
 
-    world_name = world_file.perform(ctx).split('.')[0]
-
     # launch gazebo sim
     gz_sim_launch = IncludeLaunchDescription(
         PythonLaunchDescriptionSource(
@@ -124,59 +122,18 @@ def _launch_description(ctx):
         parameters=[{"robot_description": robot_description, "use_sim_time": True}],
     )
 
-    # Bridge /clock so ROS nodes use simulation time (critical for controllers / Nav2)
-    '''
-    clock_bridge = Node(
+    # Keep all Gazebo/ROS topic mappings in config/config.yaml so the bridge
+    # can be maintained without changing this launch file.
+    bridge_config = PathJoinSubstitution([
+        FindPackageShare("chassis_bringup"),
+        "config",
+        "config.yaml",
+    ])
+    gz_bridge = Node(
         package="ros_gz_bridge",
         executable="parameter_bridge",
-        arguments=["/clock@rosgraph_msgs/msg/Clock[gz.msgs.Clock"],
+        parameters=[{"config_file": bridge_config}],
         output="screen",
-    )
-    '''
-
-    cmd_vel_bridge = Node(
-        package="ros_gz_bridge",
-        executable="parameter_bridge",
-        arguments=[
-            "/model/BILLEE_BOT/cmd_vel@geometry_msgs/msg/Twist]ignition.msgs.Twist",
-        ],
-        remappings=[('/model/BILLEE_BOT/cmd_vel', '/cmd_vel')],
-        output="screen",
-    )
-
-    odom_bridge = Node(
-        package="ros_gz_bridge",
-        executable="parameter_bridge",
-        arguments=[
-            "/model/BILLEE_BOT/odometry@nav_msgs/msg/Odometry[ignition.msgs.Odometry",
-        ],
-        remappings=[
-            ("/model/BILLEE_BOT/odometry", "/odom"),
-        ],
-        output="screen",
-    )
-    tf_bridge = Node(
-        package="ros_gz_bridge",
-        executable="parameter_bridge",
-        arguments=[
-            "/model/BILLEE_BOT/tf@tf2_msgs/msg/TFMessage[ignition.msgs.Pose_V",
-        ],
-        remappings=[
-            ("/model/BILLEE_BOT/tf", "/tf"),
-        ],
-        output="screen",
-    )
-
-    joint_state_bridge = Node(
-        package='ros_gz_bridge',
-        executable='parameter_bridge',
-        arguments=[
-            f'/world/{world_name}/model/BILLEE_BOT/joint_state@sensor_msgs/msg/JointState[gz.msgs.Model'
-        ],
-        remappings=[
-            (f'/world/{world_name}/model/BILLEE_BOT/joint_state', '/joint_states'),
-        ],
-        output='screen'
     )
 
     #Spawn the robot from /robot_description into Gazebo ---
@@ -211,10 +168,7 @@ def _launch_description(ctx):
     return set_env + [
             set_resource_path,
             gz_sim_launch,
-            odom_bridge,
-            tf_bridge,
-            joint_state_bridge,
-            cmd_vel_bridge,
+            gz_bridge,
             robot_state_publisher,
             spawn_entity,
             #spawn_launcher
@@ -229,5 +183,4 @@ def generate_launch_description():
     return LaunchDescription(declare_args + [
         OpaqueFunction(function=_launch_description)
     ])
-
 

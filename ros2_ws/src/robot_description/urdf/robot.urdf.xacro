@@ -2,4 +2,5 @@
 <robot name="robot" xmlns:xacro="http://www.ros.org/wiki/xacro" >
     <xacro:include filename="robot_core.urdf.xacro"/>
     <xacro:include filename="robot_gz.urdf.xacro"/>
+    <xacro:include filename="camera.urdf.xacro"/>
 </robot>

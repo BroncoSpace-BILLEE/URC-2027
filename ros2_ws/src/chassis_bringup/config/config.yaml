@@ -32,28 +32,14 @@
   gz_type_name: "gz.msgs.Model"
   direction: GZ_TO_ROS
 
-- ros_topic_name: "/camera/image_raw" #this will be seen in pixi run ros2 topic list
-  # The SDF sensor publishes on /camera. Keep the conventional ROS image
-  # topic name while bridging from that Gazebo topic.
-  gz_topic_name: "/camera/image_raw" #this is from ign topic -l
-  ros_type_name: "sensor_msgs/msg/Image"
-  gz_type_name: "gz.msgs.Image"
-  direction: GZ_TO_ROS
-
-- ros_topic_name: "/camera/camera_info"
-  gz_topic_name: "/camera/camera_info"
+- ros_topic_name: "/depth_cam/camera_info"
+  gz_topic_name: "/camera_info"
   ros_type_name: "sensor_msgs/msg/CameraInfo"
   gz_type_name: "gz.msgs.CameraInfo"
   direction: GZ_TO_ROS
 
-- ros_topic_name: "/depth_cam/image"
-  gz_topic_name: "/depth_cam/image"
-  ros_type_name: "sensor_msgs/msg/Image"
-  gz_type_name: "gz.msgs.Image"
-  direction: GZ_TO_ROS
-
 - ros_topic_name: "/depth_cam/depth_image"
-  gz_topic_name: "/depth_cam/depth_image"
+  gz_topic_name: "/depth_cam"
   ros_type_name: "sensor_msgs/msg/Image"
   gz_type_name: "gz.msgs.Image"
   direction: GZ_TO_ROS
@@ -62,10 +48,4 @@
   gz_topic_name: "/depth_cam/points"
   ros_type_name: "sensor_msgs/msg/PointCloud2"
   gz_type_name: "gz.msgs.PointCloudPacked"
-  direction: GZ_TO_ROS
-
-- ros_topic_name: "/depth_cam/camera_info"
-  gz_topic_name: "/depth_cam/camera_info"
-  ros_type_name: "sensor_msgs/msg/CameraInfo"
-  gz_type_name: "gz.msgs.CameraInfo"
   direction: GZ_TO_ROS

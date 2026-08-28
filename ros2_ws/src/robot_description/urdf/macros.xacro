@@ -29,7 +29,6 @@
             </material>
         </visual>
     </xacro:macro>
-
     <xacro:macro name="dark_grey">
         <visual>
             <material>
@@ -39,4 +38,12 @@
             </material>
         </visual>
     </xacro:macro>
+
+    <xacro:property name="zed_width" value="640" />
+    <xacro:property name="zed_height" value="480" />
+    <xacro:property name="zed_horizontal_fov" value="1.089" />
+    <xacro:property name="zed_fx" value="${zed_width / (2 * (sin(zed_horizontal_fov / 2) / cos(zed_horizontal_fov / 2)))}" />
+    <xacro:property name="zed_fy" value="${zed_fx}" />
+
+
 </robot>

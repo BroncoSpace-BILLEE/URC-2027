@@ -135,16 +135,6 @@ RUN pixi install
 RUN pixi run build
 COPY ros2_ws .
 
-# Automatically activate Pixi and colcon shell tooling in interactive terminals
-RUN printf '%s\n' \
-  'if command -v pixi >/dev/null 2>&1 && [ -f /root/ros2_ws/pixi.toml ]; then' \
-  '  eval "$(pixi shell-hook --environment default --as-is)"' \
-  '  if [ -f /root/ros2_ws/colcon_setup.sh ]; then' \
-  '    source /root/ros2_ws/colcon_setup.sh' \
-  '  fi' \
-  'fi' \
-  >> /root/.bashrc
-
 # Setup environment variables
 COPY docker/ros_entrypoint.sh /sbin/ros_entrypoint.sh
 RUN sudo chmod 755 /sbin/ros_entrypoint.sh

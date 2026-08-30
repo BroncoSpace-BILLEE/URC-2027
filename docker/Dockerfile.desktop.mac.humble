@@ -42,14 +42,4 @@ RUN pixi install --environment mac-cpu
 COPY ros2_ws ./
 RUN if [ -d src ]; then pixi run --environment mac-cpu build; fi
 
-# Automatically activate Pixi and colcon shell tooling in interactive terminals
-RUN printf '%s\n' \
-  'if command -v pixi >/dev/null 2>&1 && [ -f /root/ros2_ws/pixi.toml ]; then' \
-  '  eval "$(pixi shell-hook --environment mac-cpu --as-is)"' \
-  '  if [ -f /root/ros2_ws/colcon_setup.sh ]; then' \
-  '    source /root/ros2_ws/colcon_setup.sh' \
-  '  fi' \
-  'fi' \
-  >> /root/.bashrc
-
 CMD ["bash"]

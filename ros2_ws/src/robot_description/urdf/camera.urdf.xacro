@@ -3,7 +3,7 @@
         <joint name="camera_joint" type="fixed">
             <parent link="base_link"/>
             <child link="camera_link"/>
-            <origin xyz="0.3624 0.0 0.3524" rpy="0.0 0.0 0.0"/>
+            <origin xyz="0.3624 0.0 0.3424" rpy="0.0 0.0 0.0"/>
         </joint>
         <joint name="camera_optical_joint" type="fixed">
             <parent link="camera_link"/>
@@ -13,8 +13,10 @@
 
         <link name="camera_link">
             <visual>
+                    <origin xyz="0.0 0.0 0.0" rpy="0 0 ${pi/2}"/>
                     <geometry>
-                        <box size=".0303 .1753 0.0431"/>
+                        <mesh filename="package://robot_description/meshes/zed2i.stl" scale="1.0 1.0 1.0"/>
+                        <!--box size=".0303 .1753 0.0431"/!-->
                     </geometry>
                     <material name="silver">
                     </material>

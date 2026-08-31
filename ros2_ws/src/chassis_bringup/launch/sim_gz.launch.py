@@ -8,10 +8,13 @@ from launch.actions import OpaqueFunction
 from launch_ros.substitutions import FindPackageShare
 
 import os
-from ament_index_python.packages import get_package_share_directory
+from ament_index_python.packages import get_package_prefix, get_package_share_directory
 
 desc_share = get_package_share_directory("robot_description")  
 share_root = os.path.dirname(desc_share)                         
+ign_ros2_control_plugin_path = os.path.join(
+    get_package_prefix("ign_ros2_control"), "lib"
+)
 
 # environment variables required for GZ to render models properly
 set_env = [
@@ -19,6 +22,11 @@ set_env = [
     SetEnvironmentVariable("IGN_GAZEBO_RESOURCE_PATH", share_root),
     SetEnvironmentVariable("GZ_SIM_MODEL_PATH", share_root),
     SetEnvironmentVariable("GZ_SIM_RESOURCE_PATH", share_root),
+    # Ignition Gazebo loads model system plugins from this path.  The control
+    # plugin is supplied by the Pixi / ROS environment, not this workspace.
+    SetEnvironmentVariable(
+        "IGN_GAZEBO_SYSTEM_PLUGIN_PATH", ign_ros2_control_plugin_path
+    ),
     SetEnvironmentVariable(
         "IGN_GUI_PLUGIN_PATH", 
         "/workspaces/URC-2027/ros2_ws/.pixi/envs/default/lib/ign-gazebo-6/plugins/gui"
@@ -122,17 +130,31 @@ def _launch_description(ctx):
         parameters=[{"robot_description": robot_description, "use_sim_time": True}],
     )
 
-    # Keep all Gazebo/ROS topic mappings in config/config.yaml so the bridge
+    # Keep all Gazebo/ROS topic mappings in config files so node
     # can be maintained without changing this launch file.
     bridge_config = PathJoinSubstitution([
         FindPackageShare("chassis_bringup"),
         "config",
         "config.yaml",
     ])
+
+    zed_bridge_config = PathJoinSubstitution([
+        FindPackageShare("chassis_bringup"),
+        "config",
+        "zed_config.yaml",
+    ])
+
     gz_bridge = Node(
         package="ros_gz_bridge",
         executable="parameter_bridge",
         parameters=[{"config_file": bridge_config}],
+        output="screen",
+    )
+
+    zed_gz_bridge = Node(
+        package="ros_gz_bridge",
+        executable="parameter_bridge",
+        parameters=[{"config_file": zed_bridge_config}],
         output="screen",
     )
 
@@ -164,18 +186,26 @@ def _launch_description(ctx):
         ],
     )
 
+    diff_drive_controller_spawner = Node(
+        package="controller_manager",
+        executable="spawner",
+        arguments=["diff_drive_controller", "joint_state_broadcaster"]
+    )
+
+
 
     return set_env + [
             set_resource_path,
             gz_sim_launch,
             gz_bridge,
+            zed_gz_bridge,
             robot_state_publisher,
             spawn_entity,
+            diff_drive_controller_spawner,
             #spawn_launcher
         ]
 
 def generate_launch_description():
-
     #Must use an Opaque function because there are some lazily eval expressions that must be executed
     #beforehand because the args params for launch actions depend on them (world.sdf)
     #IMPORTANT: we must declare args before passing the OpaqueFunction or else it will
@@ -184,3 +214,13 @@ def generate_launch_description():
         OpaqueFunction(function=_launch_description)
     ])
 
+
+'''
+Issues Today:
+
+1. issue with the cmd_vel bridge
+2. issue with the odom bridge
+3. adding modular xacro files
+4. gz is ign since we run ignition gazebo
+5. have to rename topics bc they are namespaced
+'''

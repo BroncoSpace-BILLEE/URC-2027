@@ -90,42 +90,16 @@
         </sensor>
     </gazebo>
 
-
     <gazebo>
         <!-- Render and publish camera / GPU sensor data for this spawned model. -->
         <plugin name="ignition::gazebo::systems::Sensors" filename="libignition-gazebo-sensors-system.so">
             <render_engine>ogre2</render_engine>
         </plugin>
-
-        <plugin name="ignition::gazebo::systems::DiffDrive" filename="libignition-gazebo-diff-drive-system.so">
-
-            <left_joint>joint_wheel_l1</left_joint>
-            <left_joint>joint_wheel_l2</left_joint>
-            <left_joint>joint_wheel_l3</left_joint>
-            
-            <right_joint>joint_wheel_r1</right_joint>
-            <right_joint>joint_wheel_r2</right_joint>
-            <right_joint>joint_wheel_r3</right_joint>
-
-            <wheel_separation>.67</wheel_separation>
-            <wheel_radius>.22</wheel_radius>
-
-
-            <odom_publish_frequency>50</odom_publish_frequency>
-            <frame_id>odom</frame_id>
-            <child_frame_id>base_footprint</child_frame_id>
-
-        </plugin>
     </gazebo>
 
     <gazebo>
-        <plugin name="ignition::gazebo::systems::JointStatePublisher" filename="libignition-gazebo-joint-state-publisher-system.so">
-            <joint_name>joint_wheel_r1</joint_name>
-            <joint_name>joint_wheel_r2</joint_name>
-            <joint_name>joint_wheel_r3</joint_name>
-            <joint_name>joint_wheel_l1</joint_name>
-            <joint_name>joint_wheel_l2</joint_name>
-            <joint_name>joint_wheel_l3</joint_name>
+        <plugin filename="libign_ros2_control-system.so" name="ign_ros2_control::IgnitionROS2ControlPlugin">
+            <parameters>$(find robot_description)/config/controllers.yaml</parameters>
         </plugin>
     </gazebo>
 

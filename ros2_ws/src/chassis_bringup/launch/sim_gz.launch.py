@@ -193,14 +193,3 @@ def generate_launch_description():
     return LaunchDescription(declare_args + [
         OpaqueFunction(function=_launch_description)
     ])
-
-
-'''
-Issues Today:
-
-1. issue with the cmd_vel bridge
-2. issue with the odom bridge
-3. adding modular xacro files
-4. gz is ign since we run ignition gazebo
-5. have to rename topics bc they are namespaced
-'''

@@ -49,5 +49,29 @@ empy = "*"
 lark = "*"
 
 [environments]
-default = { features = ["linux-cuda"], no-default-feature = true }
-mac-cpu = { features = ["mac-cpu"], no-default-feature = true }
+default = { features = ["linux-cuda"]}
+mac-cpu = { features = ["mac-cpu"]}
+
+[dependencies]
+ros-humble-xacro = "*"
+ros-humble-joint-state-publisher-gui = ">=2.4.0,<3"
+ros-humble-robot-state-publisher = ">=3.0.3,<4"
+ros-humble-ament-cmake-auto = ">=1.3.14,<2"
+compilers = ">=1.11.0,<2"
+pkg-config = ">=0.29.2,<0.30"
+cmake = "<4"
+ninja = ">=1.13.2,<2"
+colcon-common-extensions = ">=0.3.0,<0.4"
+ros-humble-ros-gz = ">=0.244.24,<0.245"
+ros-humble-controller-manager = ">=2.54.0,<3"
+ros-humble-ros2-controllers = ">=2.53.1,<3"
+ros-humble-gz-ros2-control = ">=0.7.19,<0.8"
+ruff = ">=0.16.2,<0.17"
+ros-humble-ros2-control = ">=2.54.0,<3"
+ros-humble-ign-ros2-control = ">=0.7.19,<0.8"
+
+[activation]
+scripts = ["install/setup.sh"]
+
+[tasks]
+fmt = "ruff check src/ --fix"

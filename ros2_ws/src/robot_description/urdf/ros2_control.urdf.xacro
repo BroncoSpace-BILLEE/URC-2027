@@ -1,0 +1,48 @@
+<?xml version="1.0" ?>
+<robot xmlns:xacro="http://www.ros.org/wiki/xacro" >
+
+    <ros2_control name="Robot" type="system">
+        <hardware>
+            <xacro:if value="${use_sim}">
+                <plugin>ign_ros2_control/IgnitionSystem</plugin>
+            </xacro:if>
+            <xacro:unless value="${use_sim}">
+                <!-- TODO: add real hw plugin-->
+            </xacro:unless>
+        </hardware>
+
+        <joint name="joint_wheel_r1">
+            <command_interface name="velocity"/>
+            <state_interface name="position"/>
+            <state_interface name="velocity"/>
+        </joint>
+        <joint name="joint_wheel_r2">
+            <command_interface name="velocity"/>
+            <state_interface name="position"/>
+            <state_interface name="velocity"/>
+        </joint>
+        <joint name="joint_wheel_r3">
+            <command_interface name="velocity"/>
+            <state_interface name="position"/>
+            <state_interface name="velocity"/>
+        </joint>
+        <joint name="joint_wheel_l1">
+            <command_interface name="velocity"/>
+            <state_interface name="position"/>
+            <state_interface name="velocity"/>
+        </joint>
+        <joint name="joint_wheel_l2">
+            <command_interface name="velocity"/>
+            <!--TODO: add min/max vel-->
+            <state_interface name="position"/>
+            <state_interface name="velocity"/>
+        </joint>
+        <joint name="joint_wheel_l3">
+            <command_interface name="velocity"/>
+            <state_interface name="position"/>
+            <state_interface name="velocity"/>
+        </joint>
+    </ros2_control>
+
+            
+</robot>

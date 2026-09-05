@@ -79,11 +79,6 @@ def _launch_description(ctx):
         xacro_file,
     ])
 
-    lander_path = PathJoinSubstitution([
-        FindPackageShare(description_pkg),
-        'urdf/lander.urdf.xacro'
-    ])
-
     world_path = PathJoinSubstitution([
         FindPackageShare(description_pkg),
         world_file,
@@ -92,10 +87,12 @@ def _launch_description(ctx):
         Command(["xacro", " ",xacro_path]),
         value_type=str,
     )
-    lander_description = ParameterValue(
-        Command(["xacro", " ",lander_path]),
-        value_type=str,
-    )
+
+    gazebo_params_file = PathJoinSubstitution([
+        FindPackageShare("chassis_bringup"),
+        "config",
+        "gz_params.yaml"
+    ])
 
     # launch gazebo sim
     gz_sim_launch = IncludeLaunchDescription(
@@ -111,6 +108,7 @@ def _launch_description(ctx):
         launch_arguments={
             #"gz_args": f"-r -v 4 {world_path.perform(ctx)}",
             "gz_args": f"-r -v 4 empty.sdf",
+            "extra_gz_args": f"--ros-args --params-file {gazebo_params_file}",
             "on_exit_shutdown": "true",
         }.items(),
     )
@@ -171,28 +169,11 @@ def _launch_description(ctx):
         ],
     )
 
-
-    #print(lander_description.evaluate(ctx))
-    lander_description = lander_description.evaluate(ctx)
-
-
-    spawn_launcher = Node(
-        package="ros_gz_sim",
-        executable="create",
-        output="screen",
-        arguments=[
-            "-name", "Lander",
-            "-string", lander_description,
-        ],
-    )
-
     diff_drive_controller_spawner = Node(
         package="controller_manager",
         executable="spawner",
         arguments=["diff_drive_controller", "joint_state_broadcaster"]
     )
-
-
 
     return set_env + [
             set_resource_path,
@@ -202,7 +183,6 @@ def _launch_description(ctx):
             robot_state_publisher,
             spawn_entity,
             diff_drive_controller_spawner,
-            #spawn_launcher
         ]
 
 def generate_launch_description():

@@ -1,6 +1,15 @@
 <?xml version="1.0" ?>
 <robot xmlns:xacro="http://www.ros.org/wiki/xacro" >
 
+    <!-- Real-backend params, overridable from the launch file:
+             xacro robot.urdf.xacro use_sim:=false can_interface:=vcan0 gear_ratio:=48.0
+         can_interface: SocketCAN device. "mock"/"none" -> OdescSystemHardware mock
+           mode (no CAN, gear-ratio loopback feedback) for hardware-free bring-up.
+         gear_ratio: 48.0 for the ODESC V4.2 + NEO REV v1.1 drivetrain (team,
+           2026-09-06). Canonical copy: ros2_ws/src/odesc/config/node_map.yaml. -->
+    <xacro:arg name="can_interface" default="can0"/>
+    <xacro:arg name="gear_ratio" default="48.0"/>
+
     <ros2_control name="Robot" type="system">
         <hardware>
             <xacro:if value="${use_sim}">
@@ -10,11 +19,8 @@
                 <!-- Real drivetrain: six ODESC/ODrive nodes over Linux SocketCAN.
                      See ros2_ws/src/odesc/README.md. -->
                 <plugin>odesc/OdescSystemHardware</plugin>
-                <!-- UNCONFIRMED against actual Jetson/USB-CAN enumeration. -->
-                <param name="can_interface">can0</param>
-                <!-- PLACEHOLDER 64:1, unconfirmed against the physical gearbox.
-                     One-line override; canonical value in odesc/config/node_map.yaml. -->
-                <param name="gear_ratio">64.0</param>
+                <param name="can_interface">$(arg can_interface)</param>
+                <param name="gear_ratio">$(arg gear_ratio)</param>
             </xacro:unless>
         </hardware>
 

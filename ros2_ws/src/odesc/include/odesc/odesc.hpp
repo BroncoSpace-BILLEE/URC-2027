@@ -85,9 +85,17 @@ private:
   // Blocking SocketCAN RX loop; runs on rx_thread_ while rx_running_ is true.
   void rx_loop();
 
+  // Mock feedback step: no CAN, no ODESCs. Runs the commanded wheel velocity
+  // through the same gear-ratio round-trip the real path uses and integrates
+  // position, so the whole read()->diff_drive_controller->/odom->TF->viewer
+  // pipeline can be exercised with no motor hardware present. Selected with
+  // can_interface:=mock (or :=none). See odesc/README.md "Mock mode".
+  void mock_step(const rclcpp::Duration & period);
+
   // ---- configuration (from the URDF <ros2_control> block) ----
   std::string can_interface_{"can0"};
-  double gear_ratio_{64.0};
+  double gear_ratio_{48.0};   // ODESC V4.2 + NEO REV v1.1, per the team 2026-09-06
+  bool mock_{false};          // set in on_init when can_interface is "mock"/"none"
   std::vector<std::string> joint_names_;
   std::vector<uint8_t> node_ids_;
 

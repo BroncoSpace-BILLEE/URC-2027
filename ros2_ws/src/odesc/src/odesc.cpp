@@ -60,8 +60,20 @@ hardware_interface::CallbackReturn OdescSystemHardware::on_init(
   } else {
     RCLCPP_WARN(
       rclcpp::get_logger(kLogger),
-      "no 'can_interface' hardware param set; defaulting to '%s' — this is UNCONFIRMED "
-      "against the actual Jetson/USB-CAN enumeration, verify before relying on it.",
+      "no 'can_interface' hardware param set; defaulting to '%s' — confirm this "
+      "against the actual Jetson/USB-CAN enumeration before relying on it.",
+      can_interface_.c_str());
+  }
+
+  // "mock" / "none" -> no CAN at all: run a loopback so the encoder-feedback
+  // pipeline (read -> diff_drive_controller -> /odom -> TF -> RViz/Foxglove) can
+  // be tested with no ODESC/NEO hardware present. See odesc/README.md.
+  if (can_interface_ == "mock" || can_interface_ == "none") {
+    mock_ = true;
+    RCLCPP_WARN(
+      rclcpp::get_logger(kLogger),
+      "can_interface='%s' -> MOCK MODE: no CAN socket, wheel feedback is a "
+      "gear-ratio loopback of the command. For pipeline/sim testing only.",
       can_interface_.c_str());
   }
 
@@ -70,8 +82,8 @@ hardware_interface::CallbackReturn OdescSystemHardware::on_init(
   } else {
     RCLCPP_WARN(
       rclcpp::get_logger(kLogger),
-      "no 'gear_ratio' hardware param set; defaulting to %.3f — this is a PLACEHOLDER "
-      "not confirmed against the physical gearbox (see odesc/config/node_map.yaml).",
+      "no 'gear_ratio' hardware param set; defaulting to %.3f (ODESC V4.2 + NEO "
+      "REV v1.1, per odesc/config/node_map.yaml). Confirm with the §5.4 bench test.",
       gear_ratio_);
   }
 
@@ -170,6 +182,21 @@ std::vector<hardware_interface::CommandInterface> OdescSystemHardware::export_co
 hardware_interface::CallbackReturn OdescSystemHardware::on_activate(
   const rclcpp_lifecycle::State & /*previous_state*/)
 {
+  if (mock_) {
+    {
+      std::lock_guard<std::mutex> lk(est_mutex_);
+      est_.fill(Estimate{});
+    }
+    std::fill(hw_commands_.begin(), hw_commands_.end(), 0.0);
+    std::fill(hw_positions_.begin(), hw_positions_.end(), 0.0);
+    std::fill(hw_velocities_.begin(), hw_velocities_.end(), 0.0);
+    RCLCPP_INFO(
+      rclcpp::get_logger(kLogger),
+      "activated in MOCK MODE (%zu joints, gear_ratio=%.3f); no CAN traffic.",
+      joint_names_.size(), gear_ratio_);
+    return hardware_interface::CallbackReturn::SUCCESS;
+  }
+
 #if defined(__linux__)
   can_fd_ = ::socket(PF_CAN, SOCK_RAW, CAN_RAW);
   if (can_fd_ < 0) {
@@ -228,6 +255,13 @@ hardware_interface::CallbackReturn OdescSystemHardware::on_activate(
 hardware_interface::CallbackReturn OdescSystemHardware::on_deactivate(
   const rclcpp_lifecycle::State & /*previous_state*/)
 {
+  if (mock_) {
+    std::fill(hw_commands_.begin(), hw_commands_.end(), 0.0);
+    std::fill(hw_velocities_.begin(), hw_velocities_.end(), 0.0);
+    RCLCPP_INFO(rclcpp::get_logger(kLogger), "deactivated (mock mode).");
+    return hardware_interface::CallbackReturn::SUCCESS;
+  }
+
 #if defined(__linux__)
   if (can_fd_ >= 0) {
     request_axis_state_all(kAxisStateIdle);
@@ -260,8 +294,13 @@ hardware_interface::CallbackReturn OdescSystemHardware::on_shutdown(
 }
 
 hardware_interface::return_type OdescSystemHardware::read(
-  const rclcpp::Time & /*time*/, const rclcpp::Duration & /*period*/)
+  const rclcpp::Time & /*time*/, const rclcpp::Duration & period)
 {
+  if (mock_) {
+    mock_step(period);
+    return hardware_interface::return_type::OK;
+  }
+
   std::lock_guard<std::mutex> lk(est_mutex_);
   for (size_t i = 0; i < joint_names_.size(); ++i) {
     const Estimate & e = est_[node_ids_[i]];
@@ -275,9 +314,28 @@ hardware_interface::return_type OdescSystemHardware::read(
   return hardware_interface::return_type::OK;
 }
 
+void OdescSystemHardware::mock_step(const rclcpp::Duration & period)
+{
+  const double dt = period.seconds();
+  for (size_t i = 0; i < joint_names_.size(); ++i) {
+    // Same gear-ratio round-trip the real path uses (write() then read()), so
+    // the conversion math is exercised, not bypassed: it should be an identity.
+    const double motor_turns_s = hw_commands_[i] * gear_ratio_ / kTwoPi;  // write()
+    const double wheel_rad_s = motor_turns_s * kTwoPi / gear_ratio_;      // read()
+    hw_velocities_[i] = wheel_rad_s;
+    if (dt > 0.0 && std::isfinite(dt)) {
+      hw_positions_[i] += wheel_rad_s * dt;
+    }
+  }
+}
+
 hardware_interface::return_type OdescSystemHardware::write(
   const rclcpp::Time & /*time*/, const rclcpp::Duration & /*period*/)
 {
+  if (mock_) {
+    return hardware_interface::return_type::OK;  // command consumed by mock_step()
+  }
+
   if (can_fd_ < 0) {
     return hardware_interface::return_type::ERROR;
   }

@@ -15,12 +15,14 @@
 # to convert between the ODESC's motor-shaft encoder numbers and the wheel-joint
 # position/velocity interfaces ros2_control expects.
 #
-# PLACEHOLDER — 64.0 is the team's best available evidence (motor-selection doc +
-# an available Deküp "57 Sport" stock ratio) but is NOT confirmed against the
-# physical gearbox. It is a single overridable parameter, not a baked-in constant:
-# override via the <param name="gear_ratio"> in ros2_control.urdf.xacro. The full
-# 6-node drive-a-known-distance bench test is what actually validates this number.
-gear_ratio: 64.0
+# 48.0 — set for the ODESC V4.2 + NEO (REV v1.1) drivetrain per the team
+# (2026-09-06), superseding the earlier 64:1 placeholder. Still a single
+# overridable parameter, not a baked-in constant: override via the
+# <param name="gear_ratio"> in ros2_control.urdf.xacro, or from the launch file
+# (`ros2 launch chassis_bringup real.launch.py gear_ratio:=<n>`). The full 6-node
+# drive-a-known-distance bench test (test plan §5.4) is still what confirms it
+# against the physical gearbox.
+gear_ratio: 48.0
 
 nodes:
   - joint: joint_wheel_l3   # Front Left

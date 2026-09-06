@@ -37,6 +37,9 @@ read()   wheel_rad_s      = motor_turns_per_sec * 2π / gear_ratio
 write()  motor_turns_per_sec = wheel_rad_s       * gear_ratio / 2π
 ```
 
+`gear_ratio` is **48.0** for the ODESC V4.2 + NEO REV v1.1 drivetrain (set by the
+team 2026-09-06). It is one overridable parameter — see the parameter table below.
+
 Left/right mirroring is handled by `diff_drive_controller`'s wheel lists, **not**
 here — `read()`/`write()` apply no per-side sign flip. If a bench test shows the
 ODESC reports the physically-mirrored sign on one side, that correction is added
@@ -70,14 +73,26 @@ inside `<xacro:unless value="${use_sim}">`:
 
 | scope | param | default | notes |
 |---|---|---|---|
-| `<hardware>` | `can_interface` | `can0` | **UNCONFIRMED** against the actual Jetson / USB-CAN enumeration. Warned at runtime when defaulted. |
-| `<hardware>` | `gear_ratio` | `64.0` | **PLACEHOLDER** — best available evidence, not confirmed against the physical gearbox. One-line override, not a code change. Warned at runtime when defaulted. |
+| `<hardware>` | `can_interface` | `can0` | SocketCAN interface. Confirm against the actual Jetson / USB-CAN enumeration. Special values `mock` / `none` → **mock mode** (below). Overridable from the launch file: `real.launch.py can_interface:=…`. |
+| `<hardware>` | `gear_ratio` | `48.0` | Motor-shaft turns per wheel turn. `48.0` for the ODESC V4.2 + NEO REV v1.1 drivetrain (team, 2026-09-06). One-line override (`real.launch.py gear_ratio:=…`), not a code change. Still validated by the §5.4 drive-a-known-distance bench test. |
 | per `<joint>` | `node_id` | *(required)* | CAN node ID 0–5. Canonical map: [`config/node_map.yaml`](config/node_map.yaml). |
+
+### Mock mode (no CAN, no motor hardware)
+
+Set `can_interface` to `mock` (or `none`) — e.g.
+`ros2 launch chassis_bringup real.launch.py can_interface:=mock` — and the plugin
+opens **no** CAN socket. `read()` feeds the commanded wheel velocity back through
+the same gear-ratio round-trip the real path uses and integrates position, so the
+full **encoder-feedback → `diff_drive_controller` → `/odom` → TF → RViz/Foxglove**
+pipeline runs with no ODESC/NEO present. Use it to bring up and view the real
+(non-Gazebo) control stack on a bench Jetson, or to regression-test the launch
+graph. It is a perfect-tracking loopback, not a physics model — for dynamics use
+the Gazebo backend (`sim_gz.launch.py`).
 
 ### Canonical node map
 
 [`config/node_map.yaml`](config/node_map.yaml) is the single source of truth for
-node ID ↔ joint ↔ wheel position and for the `gear_ratio` placeholder. Plain
+node ID ↔ joint ↔ wheel position and for the `gear_ratio` value. Plain
 xacro cannot parse it, so the URDF `node_id` params are hand-transcribed to
 match — keep the two in sync.
 
@@ -99,8 +114,11 @@ match — keep the two in sync.
   command interface and both `position`+`velocity` state interfaces.
 - `on_activate` – open the SocketCAN socket, start the RX thread, send
   `Set_Axis_Requested_State → CLOSED_LOOP_CONTROL` to all six nodes.
+  *(mock mode: zero the state, no socket, no traffic.)*
 - `read` – latest cyclic `Get_Encoder_Estimates` per node → wheel-joint state.
+  *(mock mode: gear-ratio loopback of the command + position integration.)*
 - `write` – commanded wheel velocity → `Set_Input_Vel` per node.
+  *(mock mode: no-op; the command is consumed in `read`.)*
 - `on_deactivate` / `on_cleanup` / `on_shutdown` – `Set_Axis_Requested_State →
   IDLE` on all nodes, stop the RX thread, close the socket.
 

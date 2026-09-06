@@ -21,6 +21,7 @@
 
   <exec_depend>controller_manager</exec_depend>
   <exec_depend>ros2_controllers</exec_depend>
+  <exec_depend>odesc</exec_depend>
   <exec_depend>gz_ros2_control</exec_depend>
   <exec_depend>ros_gz</exec_depend>
   <exec_depend>ros_gz_bridge</exec_depend>

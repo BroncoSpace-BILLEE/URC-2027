@@ -25,7 +25,7 @@ For more information about pixi please look at:
 
 See **[docs/RUN_GUIDE.md](docs/RUN_GUIDE.md)** — step-by-step for the simulation (no
 hardware) and the real ODESC drivetrain, followed by a full breakdown of how each launch
-file works. Live status / handoff notes: **[HANDOFF_CHECKPOINT.md](HANDOFF_CHECKPOINT.md)**.
+file works.
 
 ## Drivetrain architecture
 

@@ -78,5 +78,12 @@ ros-humble-foxglove-bridge = "*"
 [activation]
 scripts = ["install/setup.sh"]
 
+# Same ROS 2 domain on every machine (Jetson `l4t`, ground station `default`) so a
+# ground-station teleop node and the Jetson's diff_drive_controller share one DDS graph.
+# Standardise on one value; change it if it clashes on a shared LAN / at a competition.
+# Only applies through `pixi run` / `pixi shell` — a raw shell must export it itself.
+[activation.env]
+ROS_DOMAIN_ID = "42"
+
 [tasks]
 fmt = "ruff check src/ --fix"

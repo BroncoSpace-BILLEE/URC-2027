@@ -1,331 +1,237 @@
 # BILLEE Drivetrain — Run Guide
 
-Two ways to bring up the drivetrain:
+## Machines
 
-- **A. Simulation** — Gazebo, no motor hardware. Use this to check the whole stack works.
-- **B. Real drivetrain** — six ODESC/ODrive controllers over CAN.
+| tag | machine | Pixi env | runs |
+|-----|---------|----------|------|
+| **[rover]** | Jetson, headless | `l4t` | bring-up (sim/real), `controller_manager` + controllers, `foxglove_bridge` |
+| **[ground]** | x86 Linux laptop/desktop, has a monitor | `default` | teleop (gamepad plugged in here), RViz, Foxglove Studio |
 
-All commands run on the **Jetson**, from `~/billee-software-2027/ros2_ws`, through the
-`l4t` Pixi environment. Every terminal needs the same prefix:
+Both machines: same repo at `~/billee-software-2027/ros2_ws`, same LAN, same `ROS_DOMAIN_ID`
+(pinned to `42` in `ros2_ws/pixi.toml` — see [Cross-machine ROS 2](#cross-machine-ros-2)).
 
-```bash
-cd ~/billee-software-2027/ros2_ws
-export PATH="$HOME/.pixi/bin:$PATH"      # once per shell (or add to ~/.bashrc)
-```
-
-`pixi run --environment l4t <cmd>` runs `<cmd>` with ROS 2 + the built workspace already
-sourced. `pixi shell --environment l4t` drops you into a shell where that's done once.
-
----
-
-## QUICK START
-
-### One-time: build the workspace
+Every terminal, first:
 
 ```bash
 cd ~/billee-software-2027/ros2_ws
 export PATH="$HOME/.pixi/bin:$PATH"
+```
+
+Command form: `pixi run --environment <env> <cmd>` — `<env>` is `l4t` on **[rover]**,
+`default` on **[ground]**. Commands below already have the right env.
+
+---
+
+## Build (once, and after code changes)
+
+**[rover]**
+```bash
+pixi run --environment l4t build
+```
+
+**[ground]**
+```bash
+pixi run --environment default build
+```
+
+Verify (run on the machine you built, matching env):
+```bash
+pixi run --environment l4t ros2 pkg list | grep -E 'chassis_bringup|odesc|robot_description|teleop'
+```
+All four packages must print.
+
+First build only, if `pixi run ... build` is not set up:
+```bash
 pixi run --environment l4t -- colcon build --symlink-install \
   --parallel-workers 2 --executor sequential --base-paths src \
   --cmake-args ' -DCMAKE_BUILD_TYPE=Release'
 ```
 
-Rebuild after code changes with the short form: `pixi run --environment l4t build`
-
-Check it worked:
-
-```bash
-pixi run --environment l4t ros2 pkg list | grep -E 'chassis_bringup|odesc|robot_description|teleop'
-```
-
-All four must print.
-
 ---
 
-### A. SIMULATION (no ODESC hardware)
+## A. Simulation (Gazebo, no CAN hardware)
 
-**Terminal 1 — sim + robot + controllers**
-
+**1. [rover] — sim + robot + controllers**
 ```bash
-cd ~/billee-software-2027/ros2_ws && export PATH="$HOME/.pixi/bin:$PATH"
 xvfb-run -a pixi run --environment l4t ros2 launch chassis_bringup sim_gz.launch.py
 ```
+Drop `xvfb-run -a` only if the Jetson has a monitor and you want the Gazebo window.
 
-(Drop `xvfb-run -a` if the Jetson has a monitor / you want the Gazebo window.)
-
-**Terminal 2 — viewers (RViz + Foxglove bridge)**
-
+**2. [rover] — Foxglove bridge** (port 8765)
 ```bash
-cd ~/billee-software-2027/ros2_ws && export PATH="$HOME/.pixi/bin:$PATH"
-# both viewers, sim clock:
-xvfb-run -a pixi run --environment l4t ros2 launch chassis_bringup viz.launch.py use_sim_time:=true
-# foxglove only (headless rover, view from a laptop):
 pixi run --environment l4t ros2 launch chassis_bringup viz.launch.py rviz:=false use_sim_time:=true
 ```
 
-`viz.launch.py` starts `rviz2 -d chassis_bringup/rviz/drivetrain.rviz` (RobotModel +
-TF + `/diff_drive_controller/odom`, fixed frame `odom`) and `foxglove_bridge` on
-`:8765`. You can also fold the viewers into the sim launch itself:
-`ros2 launch chassis_bringup sim_gz.launch.py rviz:=true foxglove:=true`.
-
-**Terminal 3 — gamepad (plug it into the Jetson)**
-
+**3. [ground] — RViz**
 ```bash
-cd ~/billee-software-2027/ros2_ws && export PATH="$HOME/.pixi/bin:$PATH"
-pixi run --environment l4t ros2 launch teleop teleop.launch.py
+pixi run --environment default ros2 launch chassis_bringup viz.launch.py rviz:=true foxglove:=false use_sim_time:=true
 ```
 
-**On your laptop — see it:**
-- **Foxglove Studio** → *Open connection* → `ws://192.168.4.73:8765`
-  Add a 3D panel, set *Display frame* / *Fixed frame* to `odom`, enable the robot model + TF.
-- or **RViz** on the Jetson (needs a display; `viz.launch.py` above already starts it,
-  or `pixi run --environment l4t rviz2 -d src/chassis_bringup/rviz/drivetrain.rviz`).
-
-**Drive:** hold the **safety button** (gamepad button 5 — a shoulder/bumper) and push the
-sticks. Left stick = left track, right stick = right track (tank drive). Release the button
-= stop.
-
-**Check without a gamepad:**
-
+**4. [ground] — gamepad** (plugged into the ground station)
 ```bash
-pixi run --environment l4t ros2 topic pub -r 10 /diff_drive_controller/cmd_vel_unstamped \
+pixi run --environment default ros2 launch teleop teleop.launch.py
+```
+Publishes `/diff_drive_controller/cmd_vel_unstamped`; it reaches the Jetson's
+`diff_drive_controller` over DDS (same `ROS_DOMAIN_ID` + LAN — see
+[Cross-machine ROS 2](#cross-machine-ros-2)). No `use_sim_time` — teleop runs on wall
+clock even though the sim is on `/clock`.
+
+**5. [ground] — Foxglove Studio** (optional, alternative to RViz)
+Open connection → `ws://<jetson-ip>:8765` (`hostname -I` on the rover). Then
+Layouts → Import from file → `ros2_ws/src/chassis_bringup/foxglove/drivetrain.json`
+(same content as `drivetrain.rviz`: grid, TF, robot model, `odom` trail, fixed frame
+`odom`).
+
+**Drive:** hold gamepad button 5 (deadman) and push the sticks. Left stick = left track,
+right stick = right track. Release button 5 = stop.
+
+**Drive without a gamepad — [ground]:** (also the quickest cross-machine link test)
+```bash
+pixi run --environment default ros2 topic pub -r 10 /diff_drive_controller/cmd_vel_unstamped \
   geometry_msgs/msg/Twist '{linear: {x: 0.4}, angular: {z: 0.3}}'
 ```
-
-The robot should move in Gazebo and the `odom` frame should drift in Foxglove/RViz.
+The Gazebo rover on the Jetson should drive a circle.
 
 ---
 
-### B. REAL DRIVETRAIN (ODESC over CAN)
+## B. Real drivetrain (ODESC over CAN)
 
-**Terminal 1 — bring up the CAN bus.** Use the helper (bitrate **500000**, matching
-`BILLEE_NEO_ODESC_Hardware_Integration_Guide.md` §3.4):
-
+**1. [rover] — CAN bus up**
 ```bash
-~/billee-software-2027/tooling/can-up            # can0 @ 500 kbit/s (real ODESC bus)
+~/billee-software-2027/tooling/can-up            # can0 @ 500000 bit/s
 ~/billee-software-2027/tooling/can-up status can0
-candump can0                                     # optional: ODESC heartbeat frames (cmd 0x01)
 ```
+Persist across reboots: `sudo cp tooling/can0.service /etc/systemd/system/ && sudo systemctl enable --now can0.service`
 
-Persist it across reboots with `tooling/can0.service`
-(`sudo cp … /etc/systemd/system/ && sudo systemctl enable --now can0.service`).
-
-**Terminal 2 — drivetrain**
-
+**2. [rover] — drivetrain**
 ```bash
-cd ~/billee-software-2027/ros2_ws && export PATH="$HOME/.pixi/bin:$PATH"
 pixi run --environment l4t ros2 launch chassis_bringup real.launch.py
-#   gear_ratio:=48.0    (default; ODESC V4.2 + NEO REV v1.1 — override if the gearbox differs)
-#   can_interface:=can0 (default) | vcan0 (virtual bus) | mock (no CAN, loopback feedback)
-#   rviz:=true foxglove:=true   (fold the viewers in)
 ```
+Args:
+- `gear_ratio:=48.0` — default (ODESC V4.2 + NEO REV v1.1)
+- `can_interface:=can0` — default. `mock` = no CAN, loopback feedback. `vcan0` = virtual bus.
+- `foxglove:=true` — fold the bridge in instead of running step 3.
 
-**No motor controllers yet?** Two hardware-free options, both exercise the real
-control stack (not Gazebo) end to end — encoder feedback → `/odom` → TF → viewer:
-
+No hardware yet — use one of:
 ```bash
-# 1) mock: OdescSystemHardware runs a 48:1 gear-ratio loopback of the command.
-pixi run --environment l4t ros2 launch chassis_bringup real.launch.py can_interface:=mock rviz:=true
-
-# 2) vcan0: a virtual CAN bus you can watch/inject with candump/cansend.
+pixi run --environment l4t ros2 launch chassis_bringup real.launch.py can_interface:=mock
+# or a virtual bus:
 ~/billee-software-2027/tooling/can-up vcan0
 pixi run --environment l4t ros2 launch chassis_bringup real.launch.py can_interface:=vcan0
-candump -L vcan0        # see Set_Axis_Requested_State (0x07) + Set_Input_Vel (0x0D)
-# inject encoder feedback for node 3 (joint_wheel_r1), pos=2.0 turns / vel=1.0 tps:
-cansend vcan0 069#000000400000803F
 ```
 
-**Terminal 3 — viewers** — same as sim but `use_sim_time:=false` (wall clock):
-`ros2 launch chassis_bringup viz.launch.py use_sim_time:=false`.
-
-**Terminal 4 — gamepad** — same as sim (`ros2 launch teleop teleop.launch.py`).
-
-> `real.launch.py` hands the standalone `controller_manager` a temp copy of
-> `controllers.yaml` with `use_sim_time: false`. This is required: a standalone
-> `ros2_control_node` started with `use_sim_time:=true` and no `/clock` freezes its
-> update loop and `load_controller` hangs forever. `controllers.yaml` itself is
-> unchanged (Gazebo still needs `use_sim_time: true`).
-
-**Verify the hardware came up:**
-
+**3. [rover] — Foxglove bridge**
 ```bash
-pixi run --environment l4t ros2 control list_hardware_components   # 'Robot' should be ACTIVE
+pixi run --environment l4t ros2 launch chassis_bringup viz.launch.py rviz:=false use_sim_time:=false
+```
+
+**4. [ground] — RViz**
+```bash
+pixi run --environment default ros2 launch chassis_bringup viz.launch.py rviz:=true foxglove:=false use_sim_time:=false
+```
+Or, instead of RViz, Foxglove Studio → connect `ws://<jetson-ip>:8765` →
+Layouts → Import from file → `ros2_ws/src/chassis_bringup/foxglove/drivetrain.json`.
+
+**5. [ground] — gamepad** (plugged into the ground station)
+```bash
+pixi run --environment default ros2 launch teleop teleop.launch.py
+```
+Reaches the Jetson's `diff_drive_controller` over DDS — see
+[Cross-machine ROS 2](#cross-machine-ros-2).
+
+**6. [rover] — verify hardware**
+```bash
+pixi run --environment l4t ros2 control list_hardware_components   # 'Robot' = ACTIVE
 pixi run --environment l4t ros2 control list_controllers           # both 'active'
 ```
 
-If `can0` is missing or the bus is wrong, the launch still starts but the hardware stays
-`unconfigured`, the controllers stay `inactive`, and the wheels won't move (see
-Troubleshooting).
-
-**Drive:** same safety-button + sticks as sim.
+**Drive:** same as sim (button 5 + sticks).
 
 ---
----
 
-## HOW IT WORKS
+## Reference
 
-### Pixi environments
+### RViz vs Foxglove — how to choose
 
-`ros2_ws/pixi.toml` defines three environments over one `pixi.lock`:
+Both read the same topics (`/robot_description`, `/tf`, `/diff_drive_controller/odom`), show
+the same thing, and can run at the same time. `viz.launch.py` has two independent booleans
+`rviz:=` and `foxglove:=` — that is the switch. Pick per session:
 
-| env | platform | used by |
-|-----|----------|---------|
-| `default` | linux-64 + CUDA | x86 ground-station devcontainer |
-| `mac-cpu` | linux-aarch64 | Apple-Silicon dev |
-| `l4t` | linux-aarch64 | **this Jetson** (and the `.devcontainer/l4t` container) |
+- **RViz** — runs on **[ground]**. Needs a local display and the `default` workspace built
+  there (meshes + `.rviz` config resolve from the local checkout). Launch:
+  `pixi run --environment default ros2 launch chassis_bringup viz.launch.py rviz:=true foxglove:=false use_sim_time:=<t>`
+- **Foxglove** — **[rover]** runs only the bridge
+  (`... viz.launch.py rviz:=false foxglove:=true use_sim_time:=<t>`, or `foxglove:=true`
+  folded into `sim_gz.launch.py` / `real.launch.py`). **[ground]** opens Foxglove Studio,
+  connects to `ws://<jetson-ip>:8765`, and imports
+  `ros2_ws/src/chassis_bringup/foxglove/drivetrain.json`. No local build or X display
+  needed beyond Studio itself; one WebSocket, so it works over the radio link.
 
-`l4t` and `mac-cpu` share the `aarch64-cpu` feature: RoboStack ROS 2 Humble desktop +
-Gazebo Fortress + `ros2_control` + `foxglove_bridge`, all CPU (no CUDA/ZED). The
-`[activation]` block auto-sources `install/setup.sh`, so after the first `colcon build`
-every `pixi run --environment l4t …` already has the workspace overlay.
+### Cross-machine ROS 2
 
-The **container** path is identical software: `.devcontainer/l4t/devcontainer.json` builds
-`docker/Dockerfile.l4t-humble` (base `nvcr.io/nvidia/l4t-jetpack:r39.2.1`), forwards the
-GPU with `--runtime nvidia`, and runs the same `pixi install --environment l4t`. Open it
-from VS Code: *Dev Containers: Reopen in Container* → `rover-roshumble_l4t-aarch64`. The
-native path above needs no container.
+The gamepad + teleop run on **[ground]** and publish
+`/diff_drive_controller/cmd_vel_unstamped`; `diff_drive_controller` runs on **[rover]**
+(inside Gazebo for sim, standalone for real). For that topic to cross, both machines must
+be one DDS graph:
 
-### `use_sim` selects the hardware backend
+- **Same `ROS_DOMAIN_ID`** — pinned to `42` in `ros2_ws/pixi.toml` (`[activation.env]`), so
+  every `pixi run` / `pixi shell` on both machines matches. A raw shell that skips pixi
+  must `export ROS_DOMAIN_ID=42` itself. Change the value (both machines) if it clashes on
+  a shared LAN / at competition.
+- **Same L2 LAN**, multicast not blocked. On a trusted LAN, allow the FastDDS UDP ports
+  (domain 42 ≈ 17900–18000) or drop the host firewall.
+- **Default RMW** (`rmw_fastrtps_cpp`) on both — nothing to set.
 
-`robot_description/urdf/ros2_control.urdf.xacro` has one `<ros2_control>` block whose
-`<hardware>` plugin is chosen by the `use_sim` xacro arg:
-
-- `use_sim:=true` (default) → `ign_ros2_control/IgnitionSystem` — simulated actuators
-  inside Gazebo. **No CAN, no `can0`, no ODESCs.**
-- `use_sim:=false` → `odesc/OdescSystemHardware` — a `ros2_control` `SystemInterface` that
-  opens Linux SocketCAN (`can0`) and speaks the ODrive "CAN Simple" protocol (v0.5.4) to
-  six nodes, IDs 0–5 (map: `odesc/config/node_map.yaml`).
-
-`sim_gz.launch.py` passes no arg (so `use_sim=true`); `real.launch.py` passes
-`use_sim:=false`.
-
-### What `sim_gz.launch.py` starts
-
-1. **Gazebo Fortress** (`ros_gz_sim`), world `empty.sdf`, running (`-r`).
-2. **`robot_state_publisher`** — publishes `/robot_description` + `/tf` from the xacro,
-   `use_sim_time:=true`.
-3. **`ros_gz_bridge`** — bridges `/clock` (and anything added to
-   `chassis_bringup/config/config.yaml`) Gazebo→ROS.
-4. **`create`** — spawns the robot (`BILLEE_BOT`) from `/robot_description`.
-5. **controller spawners** — `joint_state_broadcaster` + `diff_drive_controller`
-   (`robot_description/config/controllers.yaml`). Gazebo hosts the `controller_manager`
-   via the `ign_ros2_control` plugin.
-
-`diff_drive_controller` consumes `/diff_drive_controller/cmd_vel_unstamped`, drives the six
-wheel joints, integrates wheel odometry, and publishes `/diff_drive_controller/odom` +
-the `odom → base_link` TF (`enable_odom_tf: true`). That TF is what makes the robot move
-on screen.
-
-> **Headless note:** the launch file starts Gazebo *with* its GUI. Over SSH with no
-> display that GUI can't open, so we wrap it in `xvfb-run` (a throwaway virtual display) —
-> physics, `ros2_control` and all topics run normally; you just don't see the Gazebo
-> window. Use Foxglove/RViz for the picture. On a Jetson with a monitor, skip `xvfb-run`.
->
-> `sim_gz.launch.py` also sets two `IGN_GUI_PLUGIN_PATH` / `QML2_IMPORT_PATH` values that
-> were hardcoded to an old path (`/workspaces/URC-2027/...envs/default/...`). They are
-> only needed for the Gazebo GUI's own panels and are harmless when wrong under
-> `xvfb-run`; if you run the real Gazebo GUI and its side panels are missing, fix those
-> two lines to point at `…/ros2_ws/.pixi/envs/l4t/lib/ign-gazebo-6/plugins/gui`.
-
-### What `real.launch.py` starts
-
-Same `robot_description` + same `controllers.yaml`, but:
-
-- xacro expanded with `use_sim:=false can_interface:=<arg> gear_ratio:=<arg>` →
-  `OdescSystemHardware` loaded.
-- a **standalone `controller_manager`** (`ros2_control_node`), given `robot_description`
-  as a parameter and a **temp copy of `controllers.yaml` with `use_sim_time: false`**
-  (see the box in section B — this is load-bearing, not cosmetic).
-- `use_sim_time:=false` everywhere (wall clock).
-- same `joint_state_broadcaster` + `diff_drive_controller` spawners.
-- the `viz.launch.py` include (`rviz:=`/`foxglove:=`, default off).
-
-Lifecycle: `on_init` validates params/interfaces and picks mock mode when
-`can_interface` is `mock`/`none`. `on_activate` opens the SocketCAN socket and sends
-`Set_Axis_Requested_State → CLOSED_LOOP_CONTROL (8)` to all six nodes — with a real
-`can0` that is missing/misconfigured this fails cleanly (component stays
-`unconfigured`, wheels dead). `read()` converts `Get_Encoder_Estimates` motor
-turns → wheel rad via the **48:1** ratio; `write()` does the inverse into
-`Set_Input_Vel`. Mock mode skips the socket and loops the command back through the
-same ratio so `/odom`/TF/viewers still work with no motors.
-
-### The teleop chain
-
-`teleop.launch.py` starts:
-
-- **`joy_node`** (`joy` pkg) — reads the USB gamepad (`/dev/input/js0`), publishes `/joy`.
-  Params from `teleop/config/joystick.yaml` (`device_id: 0`, `deadzone: 0.05`).
-- **`joy_tank_drive`** (`teleop/src/joy_teleop.cpp`) — subscribes `/joy`, publishes
-  `Twist`, **remapped to `/diff_drive_controller/cmd_vel_unstamped`**.
-  - `left_axis: 1`, `right_axis: 4`, `max_vel: 2.0` (m/s and rad/s scale).
-  - `safety_button: 5` — twist is **zero unless button 5 is held**. This is a deadman.
-  - `linear.x = (L+R)/2 · max_vel`, `angular.z = (R−L)/2 · max_vel` — tank mixing.
-
-Same chain drives sim and real; only the `controller_manager` behind the topic differs.
-
-### Visualizing — Foxglove vs RViz
-
-- **`foxglove_bridge`** exposes every ROS topic over one WebSocket on `:8765`. Foxglove
-  Studio (laptop app or browser) connects to `ws://<jetson-ip>:8765` — no ROS on the
-  laptop, one TCP connection (works over the rover radio link). This is the intended
-  ground-station path.
-- **RViz** is a native ROS node — it must run somewhere with ROS and a display (the
-  Jetson with a monitor, or `ssh -X`, or the devcontainer with X forwarding). Same 3D
-  content; better for interactive markers / MoveIt, worse over a network.
-- Both can run at once. For either, set the fixed frame to **`odom`**.
-
-### `use_sim_time`
-
-In sim, `robot_state_publisher`, `controller_manager` and the controllers all run with
-`use_sim_time:=true` and follow Gazebo's `/clock`. Anything else you start against the sim
-(RViz, `foxglove_bridge`, `ros2 topic echo`) should also get `--ros-args -p use_sim_time:=true`
-or TF timestamps will look stale — `viz.launch.py use_sim_time:=true` handles this.
-
-`real.launch.py` runs everything on the **wall clock** and *must*: a standalone
-`ros2_control_node` with `use_sim_time:=true` but no `/clock` publisher has a frozen
-RT update loop, and `load_controller` then blocks forever (every "real" bring-up
-would wedge at *"Loading controller 'diff_drive_controller'"*). The launch guarantees
-this by generating a wall-clock copy of `controllers.yaml`. If you ever run
-`ros2_control_node` by hand, pass `-p use_sim_time:=false`.
-
-> The warning `Could not enable FIFO RT scheduling policy: Operation not permitted`
-> from `ros2_control_node` is harmless here — the loop just runs at `SCHED_OTHER`.
-> For low-jitter real driving, grant the user `rtprio` (`/etc/security/limits.d/`,
-> or run under a systemd unit with `AmbientCapabilities=CAP_SYS_NICE` /
-> `LimitRTPRIO=`). `setcap` on the conda binary does **not** work — it trips
-> `AT_SECURE` and the env's `LD_LIBRARY_PATH` is then ignored.
-
-### CAN bring-up (real only)
-
-`can0` / `vcanN` are not up by default. Use **`tooling/can-up`**:
-
+Test the link from **[ground]** before plugging in the gamepad:
 ```bash
-tooling/can-up            # can0 @ 500000 bit/s, restart-ms 100  (real ODESC bus)
-tooling/can-up can0 250000   # override the bitrate
-tooling/can-up vcan0     # create + up a virtual bus for hardware-free testing
-tooling/can-up down vcan0
-tooling/can-up status can0
+pixi run --environment default ros2 topic list          # must list /diff_drive_controller/*, /tf, /robot_description
+pixi run --environment default ros2 topic pub -r 10 /diff_drive_controller/cmd_vel_unstamped \
+  geometry_msgs/msg/Twist '{linear: {x: 0.4}, angular: {z: 0.3}}'   # Gazebo rover on the Jetson drives a circle
 ```
 
-Bitrate **500000** matches `BILLEE_NEO_ODESC_Hardware_Integration_Guide.md` §3.4
-(`odrv0.can.config.baud_rate = 500000`) — confirm against the actual ODESC firmware
-before trusting it. Persist `can0` with `tooling/can0.service`
-(`sudo cp tooling/can0.service /etc/systemd/system/ && sudo systemctl enable --now can0.service`).
-`odesc/config/node_map.yaml` is the canonical node-ID ↔ wheel map; the per-joint
-`<param name="node_id">` values in `ros2_control.urdf.xacro` are hand-copied from it —
-keep them in sync.
+Once this works, RViz on **[ground]** also works direct over DDS (no bridge). All rover
+topics now cross DDS — fine on a LAN; for a bandwidth-limited radio link switch to a
+`zenoh-bridge-ros2dds` on each side bridging only `cmd_vel` up and `odom`/`tf`/
+`robot_description`/`joint_states` down (not yet set up).
 
-### Troubleshooting
+### Notes
 
-| Symptom | Cause / fix |
+- **`use_sim_time`**: sim = `true` (Gazebo `/clock`), real = `false` (wall clock).
+  `real.launch.py` forces wall clock — a standalone `ros2_control_node` with
+  `use_sim_time:=true` and no `/clock` wedges at "Loading controller 'diff_drive_controller'".
+- **CAN bitrate 500000** matches `BILLEE_NEO_ODESC_Hardware_Integration_Guide.md` §3.4.
+  Override: `tooling/can-up can0 250000`.
+- **Node ↔ wheel map**: `odesc/config/node_map.yaml` is canonical; the `node_id` params in
+  `robot_description/urdf/ros2_control.urdf.xacro` are hand-copied — keep in sync.
+- **Backend select**: `use_sim:=true` → Gazebo `IgnitionSystem`; `use_sim:=false` →
+  `odesc/OdescSystemHardware` (SocketCAN, ODrive CAN Simple v0.5.4, nodes 0–5).
+  `sim_gz.launch.py` sets `true`, `real.launch.py` sets `false`.
+- **Teleop** (`teleop/config/joystick.yaml`, `joy_teleop.cpp`): `left_axis 1`, `right_axis 4`,
+  `safety_button 5`, `max_vel 2.0`. `linear.x=(L+R)/2·max_vel`, `angular.z=(R−L)/2·max_vel`.
+- **`xvfb-run`** is only for headless Gazebo on the rover. Never needed for RViz — RViz runs
+  on **[ground]** with a real display.
+- **RT warning** `Could not enable FIFO RT scheduling policy` from `ros2_control_node` is
+  harmless (runs `SCHED_OTHER`). For low jitter grant `rtprio` via `/etc/security/limits.d/`
+  or a systemd unit with `AmbientCapabilities=CAP_SYS_NICE`. Not `setcap` (breaks conda libs).
+
+---
+
+## Troubleshooting
+
+| Symptom | Fix |
 |---|---|
-| `colcon build` killed / machine unresponsive | RAM pressure (8 GB board). Keep `--parallel-workers 2 --executor sequential`; a `/swapfile2` (8 GB) is already active. |
-| Gazebo GUI window never appears over SSH | Expected. Use `xvfb-run -a …` and view in Foxglove/RViz. |
-| Foxglove "connection refused" | `foxglove_bridge` not running, or wrong IP. `hostname -I` on the Jetson; port is `8765`. |
-| robot model shows but never moves (sim) | teleop safety button not held; or nothing publishing `/diff_drive_controller/cmd_vel_unstamped` (`ros2 topic echo` it). |
-| `real.launch.py`: wheels dead, `ros2 control list_controllers` shows `inactive` | `can0` down or wrong bitrate → `OdescSystemHardware` `on_activate` failed. `tooling/can-up` first; check `dmesg` / node logs. To bring the stack up with no motors, use `can_interface:=mock` or `:=vcan0`. |
-| `real.launch.py` hangs at *"Loading controller 'diff_drive_controller'"*, `spawner` "Failed getting a result from … list_controllers" | Standalone `ros2_control_node` running with `use_sim_time:=true` and no `/clock` — frozen RT loop. `real.launch.py` fixes this automatically; if you hand-rolled the CM, pass `-p use_sim_time:=false`. |
-| `ros2_control_node`: `Could not enable FIFO RT scheduling policy` | Harmless — runs at `SCHED_OTHER`. For jitter-free real driving grant `rtprio` via `/etc/security/limits.d/` or a systemd unit (`AmbientCapabilities=CAP_SYS_NICE`). Not `setcap` (breaks conda lib lookup). |
-| `real.launch.py can_interface:=vcan0` but no frames | `tooling/can-up vcan0` first; `candump -L vcan0`. On activate you should see six `0x07` frames, then `0x0D` per `write()` while driving. |
-| `ros2 pkg list` missing the 4 packages | overlay not sourced — run through `pixi run --environment l4t …`, and confirm `install/` exists (build succeeded). |
-| joystick does nothing, `/joy` silent | wrong `device_id` / not `/dev/input/js0`; check `ls /dev/input/js*` and `jstest`. Chain: `/joy` → `joy_tank_drive` → `/diff_drive_controller/cmd_vel_unstamped` (hold button 5). |
+| `colcon build` killed / machine hangs (rover) | RAM pressure (8 GB). Keep `--parallel-workers 2 --executor sequential`; `/swapfile2` (8 GB) is active. |
+| Gazebo window never appears (rover, SSH) | Expected — headless. Use `xvfb-run -a`; view in RViz/Foxglove. |
+| RViz empty tree / no topics ([ground]) | Not on the rover's DDS graph. Same LAN + `ROS_DOMAIN_ID` (`echo $ROS_DOMAIN_ID` → `42` on both); DDS UDP ports open. Test: `pixi run --environment default ros2 topic list`. See [Cross-machine ROS 2](#cross-machine-ros-2). |
+| RViz "package 'chassis_bringup' not found" / missing meshes | `[ground]` workspace not built: `pixi run --environment default build`. |
+| Gamepad on [ground] but the Gazebo rover doesn't move | `[ground]` not on the rover's DDS graph — `ros2 topic list` from `[ground]` must show `/diff_drive_controller/cmd_vel_unstamped`. Check same `ROS_DOMAIN_ID` (`42`), same LAN, firewall. Then `ros2 topic echo /joy` shows pad input, and the deadman (button 5) is held. |
+| `joy_node` not found / teleop won't launch ([ground]) | `joy` missing from the `default` env. `pixi run --environment default ros2 pkg executables joy` should list `joy_node`; if not, add `ros-humble-joy` to `pixi.toml` `[dependencies]` and rebuild the env. |
+| Foxglove "connection refused" | Bridge not running or wrong IP. `hostname -I` on rover; port 8765. |
+| Foxglove: robot shows as bare axes, no meshes | Bridge not serving `package://` assets. Confirm `robot_description` is in the sourced overlay on the rover and the `foxglove_bridge` build supports asset fetch. |
+| Foxglove layout imports but a display is missing | Studio schema drift — add the layer via the 3D panel settings, then Layouts → Export and overwrite `foxglove/drivetrain.json`. |
+| Robot model shows but never moves (sim) | Deadman (button 5) not held, or nothing on `/diff_drive_controller/cmd_vel_unstamped` (`ros2 topic echo` it). |
+| Real: wheels dead, `list_controllers` shows `inactive` | `can0` down / wrong bitrate → `on_activate` failed. `tooling/can-up` first; check `dmesg`. No motors: `can_interface:=mock` or `vcan0`. |
+| Real: hangs at "Loading controller 'diff_drive_controller'" | Standalone `ros2_control_node` on `use_sim_time:=true` with no `/clock`. `real.launch.py` handles it; if hand-rolled, pass `-p use_sim_time:=false`. |
+| `can_interface:=vcan0` but no frames | `tooling/can-up vcan0` first; `candump -L vcan0`. Expect six `0x07` frames on activate, then `0x0D` per write while driving. |
+| `ros2 pkg list` missing the 4 packages | Overlay not sourced — go through `pixi run --environment <env>`; confirm `install/` exists. |
+| Joystick does nothing, `/joy` silent | Wrong `device_id` / not `/dev/input/js0`. `ls /dev/input/js*`, `jstest`. Chain: `/joy` → `joy_tank_drive` → `/diff_drive_controller/cmd_vel_unstamped` (hold button 5). |

@@ -16,7 +16,7 @@
       "followMode": "follow-position",
       "followTf": "base_link",
       "scene": {
-        "transforms": { "showLabel": true, "labelSize": 0.2, "axisScale": 0.5 },
+        "transforms": { "showLabel": true, "labelSize": 0.06, "axisScale": 0.3 },
         "backgroundColor": "#303030"
       },
       "transforms": {},
@@ -24,7 +24,7 @@
         "/diff_drive_controller/odom": {
           "visible": true,
           "type": "axis",
-          "axisScale": 0.3,
+          "axisScale": 0.2,
           "historySize": 100
         }
       },

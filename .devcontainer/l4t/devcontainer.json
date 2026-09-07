@@ -44,7 +44,16 @@
         "waderyan.gitblame"
       ],
       "settings": {
-        "python-envs.defaultEnvManager": "ms-python.python:system"
+        "python-envs.defaultEnvManager": "ms-python.python:system",
+        // host networking + --pid=host makes VS Code's port scanner see every
+        // listening socket on the host (incl. its own forwarding helper), which
+        // runs away spawning hundreds of 3073x forwards. Disable auto-forward.
+        "remote.autoForwardPorts": false,
+        "remote.autoForwardPortsFallback": 0,
+        "remote.restoreForwardedPorts": false,
+        "remote.otherPortsAttributes": {
+          "onAutoForward": "ignore"
+        }
       }
     }
   }
